@@ -108,7 +108,7 @@ async function copyToClipboard(text) {
 export default function RestaurantReviewPage() {
   const [mounted, setMounted] = useState(false);
   const [selectedChips, setSelectedChips] = useState([]);
-  const [language, setLanguage] = useState("ENGLISH"); // Default language
+  const [language, setLanguage] = useState("ENGLISH");
   const [reviewDraft, setReviewDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -242,7 +242,7 @@ END:VCARD`;
 
   return (
     <main className="veg-glass-viewport">
-      {/* BULLETPROOF FIXED BACKGROUND (Z-INDEX 0) */}
+      {/* BULLETPROOF FIXED BACKGROUND USING YOUR NEW IMAGE */}
       <div className="fixed-bg"></div>
 
       <div className="main-content-flow">
@@ -288,6 +288,7 @@ END:VCARD`;
             );
           })}
         </div>
+        <p className="chip-hint">Select up to 3 points</p>
 
         {/* Language Selector */}
         <div className="capsule-lang-dock">
@@ -466,13 +467,13 @@ END:VCARD`;
       </div>
 
       <style jsx global>{`
-        /* Force override any global layout settings */
+        /* Force override any global layout settings to prevent jumping */
         html, body {
           margin: 0 !important;
           padding: 0 !important;
           background-color: #fef2f2 !important; 
           height: 100%;
-          overscroll-behavior-y: none; /* Stops the bouncy pull-to-refresh on mobile */
+          overscroll-behavior-y: none; 
         }
 
         .veg-glass-viewport {
@@ -497,8 +498,9 @@ END:VCARD`;
         }
 
         /* 
-         * FIX 1: background-position: center bottom; -> Ensures food bowl at the bottom is always visible
-         * FIX 2: Extended top/bottom/left/right -> Prevents jumping when mobile URL bar hides
+         * FIX 1: URL is now the NEW PERFECT IMAGE
+         * FIX 2: Extended margins (-20px) prevents jump when mobile URL bar hides
+         * FIX 3: background-position: center bottom ensures food bowl is anchored
          */
         .fixed-bg {
           position: fixed;
@@ -506,7 +508,7 @@ END:VCARD`;
           bottom: -20px;
           left: -20px;
           right: -20px;
-          background-image: url('/bg.png'); 
+          background-image: url('/1000317201.png'); /* YOUR NEW PERFECT IMAGE */
           background-size: cover;
           background-position: center bottom; 
           background-repeat: no-repeat;
@@ -616,7 +618,15 @@ END:VCARD`;
           letter-spacing: 2px;
           color: #ffffff;
           text-transform: uppercase;
+          margin: 0 0 6px;
+          text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+        }
+        
+        .chip-hint {
+          font-size: 10px;
+          color: #ffffff;
           margin: 0 0 12px;
+          opacity: 0.9;
           text-shadow: 0 1px 4px rgba(0,0,0,0.6);
         }
 
@@ -625,7 +635,7 @@ END:VCARD`;
           flex-wrap: wrap;
           justify-content: center;
           gap: 6px;
-          margin-bottom: 14px;
+          margin-bottom: 6px;
           width: 100%;
         }
 
