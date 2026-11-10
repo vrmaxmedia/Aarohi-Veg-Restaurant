@@ -242,14 +242,8 @@ END:VCARD`;
 
   return (
     <main className="veg-glass-viewport">
-      {/* BULLETPROOF MOBILE BACKGROUND FIX */}
-      <div className="fixed-bg-container">
-        <img 
-          src="/1000317201.png" 
-          alt="background" 
-          className="bg-image-pin"
-        />
-      </div>
+      {/* EXACT CLINIC APPROACH FOR BULLETPROOF FIXED BACKGROUND */}
+      <div className="fixed-bg"></div>
 
       <div className="main-content-flow">
         
@@ -473,13 +467,12 @@ END:VCARD`;
       </div>
 
       <style jsx global>{`
-        /* Reset mobile behavior */
+        /* Force override any global layout settings */
         html, body {
           margin: 0 !important;
           padding: 0 !important;
           background-color: #fef2f2 !important; 
-          min-height: 100%;
-          overscroll-behavior-y: none; 
+          min-height: 100% !important;
         }
 
         .veg-glass-viewport {
@@ -504,25 +497,21 @@ END:VCARD`;
         }
 
         /* 
-         * BULLETPROOF MOBILE BACKGROUND FIX 
-         * By setting inset: 0 on a fixed container, it ignores URL bar resizes.
+         * FIX: EXACT CLINIC APPROACH FOR FIXED BACKGROUND
+         * Using the CSS background-image method with 100vw/100vh fixed div.
          */
-        .fixed-bg-container {
+        .fixed-bg {
           position: fixed;
           top: 0;
-          bottom: 0;
           left: 0;
-          right: 0;
-          z-index: 0;
+          width: 100vw;
+          height: 100vh;
+          background-image: url('/1000317201.png'); 
+          background-size: cover;
+          background-position: center bottom; /* Anchor bottom to show food */
+          background-repeat: no-repeat;
+          z-index: 0; 
           pointer-events: none;
-          overflow: hidden;
-        }
-
-        .bg-image-pin {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: center bottom; /* Anchor to the bottom bowl */
         }
 
         .main-content-flow {
