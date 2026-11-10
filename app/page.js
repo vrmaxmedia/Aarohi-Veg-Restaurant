@@ -2,61 +2,50 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
+// =====================================================================
+//  CLIENT CONFIGURATION (Aarohi Veg Restaurant - Daryaganj)
+// =====================================================================
 const PLACE_ID = "ChIJtRYjRQr9DDkRA97B_A4815g";
 
 const CLIENT_CONFIG = {
-  clientId: "aarohi_daryaganj_01",
   businessName: "Aarohi Veg Restaurant",
-  subHeading: "Vegetarian Restaurant • Daryaganj, Delhi",
-  tagline: "VEGETARIAN RESTAURANT • DINE-IN • TAKEAWAY • ONLINE ORDER • DARYAGANJ, OLD DELHI",
+  subHeading: "Vegetarian Restaurant • Daryaganj",
+  tagline: "VEGETARIAN RESTAURANT • DINE-IN • TAKEAWAY • ONLINE ORDER",
   description:
-    "Highly rated vegetarian restaurant in Daryaganj, Old Delhi with comfortable red-cushioned seating, a neat modern interior, tasty vegetarian food, friendly service and pocket-friendly pricing (about ₹200 to ₹400 per person). Dine-in, takeaway and online ordering available, on-site parking, open late till 1 am.",
+    "Highly rated vegetarian restaurant in Daryaganj, Old Delhi. Known for tasty pure veg food, modern interior, and pocket-friendly pricing. Open late till 1 am with on-site parking.",
   city: "Daryaganj, Old Delhi 110002",
+  areaLabel: "Daryaganj, Delhi",
   fullAddress: "Plot 5048/49, Netaji Subhash Marg, Old Delhi, Daryaganj, New Delhi, Delhi, 110002",
   phone: "+919911275551",
   cleanPhone: "919911275551",
   logoUrl: "/logo.png",
+
   googleReviewUrl: `https://search.google.com/local/writereview?placeid=${PLACE_ID}`,
-  googlePageUrl: `https://www.google.com/maps/place/?q=place_id:${PLACE_ID}`,
   mapsDirectionUrl: `https://www.google.com/maps/dir/?api=1&destination=Aarohi%20Veg%20Restaurant%20Daryaganj&destination_place_id=${PLACE_ID}`,
 
-  // Social / menu links: jo ho wahi daalo, khali ("") chhodoge to icon apne aap hide ho jayega
   instagramUrl: "",
   facebookUrl: "",
   youtubeUrl: "",
-  whatsappChannelUrl: "",
   menuUrl: "",
 
-  // "What we offer" card (Google listing se)
-  offers: [
-    "Vegetarian Restaurant",
-    "Dine-in & Takeaway",
-    "Online Ordering Available",
-    "On-site Parking",
-    "Open Late • Closes 1 AM",
-    "Pocket-friendly • ₹200 – 400 per person",
-  ],
-
-  // VR Max AI (agency) contact
   agencyName: "VR Max AI",
   agencyWhatsapp: "918700660097",
   agencyPhoneDisplay: "+91 87006 60097",
 
-  customInstruction:
-    "You are an authentic local customer writing an unscripted Google Maps review for Aarohi Veg Restaurant, a vegetarian restaurant in Daryaganj, Old Delhi. Write like a real human, not a marketer. Strictly DO NOT use full stops (.) at the end of sentences. Vary length, tone and structure completely at random. Never use robotic or repetitive openings.",
-
+  // Must match exactly with the route.js CHIPS keys
   chips: [
-    { label: "All", context: "overall dining experience at the vegetarian restaurant: food, ambience, service and value" },
-    { label: "Food & Taste", context: "tasty fresh vegetarian food, good flavours, well cooked and nicely served" },
-    { label: "Ambience & Seating", context: "comfortable red cushioned seating, neat modern interior, pleasant relaxed vibe" },
-    { label: "Staff & Service", context: "polite friendly staff, quick and attentive service, welcoming behaviour" },
-    { label: "Value for Money", context: "fair pocket-friendly pricing, good portions and great value for the money" },
-    { label: "Family & Groups", context: "a good place for family dinners, group meals and small celebrations" },
-    { label: "Parking & Location", context: "easy to find in Daryaganj on Netaji Subhash Marg with on-site parking available" },
-    { label: "Takeaway & Order", context: "easy takeaway or online order, neat packaging and food arriving fresh" },
-    { label: "Clean & Hygienic", context: "clean tables, neat hygienic place and well-maintained surroundings" },
+    'Food & Taste',
+    'Ambience & Seating',
+    'Staff & Service',
+    'Value for Money',
+    'Family & Groups',
+    'Parking & Location',
+    'Takeaway & Order',
+    'Clean & Hygienic'
   ],
 };
+
+const HAS_SOCIAL = !!(CLIENT_CONFIG.instagramUrl || CLIENT_CONFIG.facebookUrl || CLIENT_CONFIG.youtubeUrl || CLIENT_CONFIG.menuUrl);
 
 const MAP_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(
   `${CLIENT_CONFIG.businessName}, ${CLIENT_CONFIG.fullAddress}`
@@ -99,9 +88,7 @@ async function copyToClipboard(text) {
       await navigator.clipboard.writeText(text);
       return true;
     }
-  } catch (e) {
-    // fallback neeche
-  }
+  } catch (e) {}
   try {
     const ta = document.createElement("textarea");
     ta.value = text;
@@ -110,7 +97,6 @@ async function copyToClipboard(text) {
     ta.style.opacity = "0";
     document.body.appendChild(ta);
     ta.select();
-    ta.setSelectionRange(0, text.length);
     const ok = document.execCommand("copy");
     ta.remove();
     return ok;
@@ -119,10 +105,10 @@ async function copyToClipboard(text) {
   }
 }
 
-export default function UniversalReviewPage() {
+export default function RestaurantReviewPage() {
   const [mounted, setMounted] = useState(false);
-  const [selectedChipObj, setSelectedChipObj] = useState(CLIENT_CONFIG.chips[0]);
-  const [language, setLanguage] = useState("ENGLISH");
+  const [selectedChips, setSelectedChips] = useState([]);
+  const [language, setLanguage] = useState("ENGLISH"); // Default language
   const [reviewDraft, setReviewDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -141,7 +127,7 @@ export default function UniversalReviewPage() {
     };
   }, []);
 
-  const generateAIReview = useCallback(async (chipObj, lang) => {
+  const generateAIReview = useCallback(async (chipsToUse, lang) => {
     abortControllerRef.current?.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -153,8 +139,6 @@ export default function UniversalReviewPage() {
     setReviewDraft("");
 
     try {
-      const effectiveFocus = `${chipObj.label} (Context cues: ${chipObj.context})`;
-
       const res = await fetch("/api/reviews", {
         method: "POST",
         signal: controller.signal,
@@ -165,12 +149,10 @@ export default function UniversalReviewPage() {
           category: CLIENT_CONFIG.tagline,
           description: CLIENT_CONFIG.description,
           city: CLIENT_CONFIG.city,
-          selectedService: effectiveFocus,
-          customInstruction: CLIENT_CONFIG.customInstruction,
+          selectedChips: chipsToUse,
           language: lang,
           nonce: Math.random().toString(36).substring(2, 12),
           timestamp: Date.now(),
-          randomSeed: Math.floor(Math.random() * 100000),
           recentLengths: recentLengthsRef.current,
         }),
       });
@@ -196,21 +178,27 @@ export default function UniversalReviewPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    generateAIReview(selectedChipObj, language);
+    generateAIReview(selectedChips, language);
     return () => abortControllerRef.current?.abort();
-  }, [mounted, selectedChipObj, language, generateAIReview]);
+  }, [mounted, selectedChips, language, generateAIReview]);
 
-  function handleChipChange(chipObj) {
-    if (chipObj.label === selectedChipObj.label) {
-      generateAIReview(chipObj, language);
-      return;
+  function toggleChip(chip) {
+    let updated;
+    if (selectedChips.includes(chip)) {
+      updated = selectedChips.filter((c) => c !== chip);
+    } else {
+      if (selectedChips.length >= 3) {
+        alert("Aap max 3 points select kar sakte hain.");
+        return;
+      }
+      updated = [...selectedChips, chip];
     }
-    setSelectedChipObj(chipObj);
+    setSelectedChips(updated);
   }
 
   function handleLanguageChange(lang) {
     if (lang === language) {
-      generateAIReview(selectedChipObj, lang);
+      generateAIReview(selectedChips, lang);
       return;
     }
     setLanguage(lang);
@@ -250,19 +238,15 @@ END:VCARD`;
     URL.revokeObjectURL(url);
   }
 
-  const hasSocials = !!(
-    CLIENT_CONFIG.instagramUrl ||
-    CLIENT_CONFIG.whatsappChannelUrl ||
-    CLIENT_CONFIG.facebookUrl ||
-    CLIENT_CONFIG.youtubeUrl ||
-    CLIENT_CONFIG.menuUrl
-  );
-
-  if (!mounted) return <div style={{ minHeight: "100vh", backgroundColor: "#c01a2a" }} />;
+  if (!mounted) return <div style={{ minHeight: "100vh", backgroundColor: "#fef2f2" }} />;
 
   return (
-    <main className="soft-luxury-viewport">
+    <main className="veg-glass-viewport">
+      {/* BULLETPROOF FIXED BACKGROUND (Z-INDEX 0) */}
+      <div className="fixed-bg"></div>
+
       <div className="main-content-flow">
+        
         {/* Logo */}
         <div className="brand-medallion-badge">
           <div
@@ -276,9 +260,9 @@ END:VCARD`;
 
         <p className="brand-serif-subtitle">{CLIENT_CONFIG.subHeading}</p>
 
-        <div className="royal-shahi-divider">
+        <div className="royal-divider">
           <span className="divider-line"></span>
-          <span className="divider-gem">◆</span>
+          <span className="divider-diamond">◆</span>
           <span className="divider-line"></span>
         </div>
 
@@ -291,15 +275,15 @@ END:VCARD`;
         {/* Filter Chips */}
         <div className="floating-pills-cloud">
           {CLIENT_CONFIG.chips.map((chip) => {
-            const active = selectedChipObj.label === chip.label;
+            const active = selectedChips.includes(chip);
             return (
               <button
-                key={chip.label}
+                key={chip}
                 type="button"
-                onClick={() => handleChipChange(chip)}
+                onClick={() => toggleChip(chip)}
                 className={`embossed-pill ${active ? "active" : ""}`}
               >
-                {chip.label}
+                {chip} {active && "✓"}
               </button>
             );
           })}
@@ -322,8 +306,8 @@ END:VCARD`;
           })}
         </div>
 
-        {/* Review Box */}
-        <div className="signature-review-box">
+        {/* Review Box (Glassmorphism) */}
+        <div className="signature-review-box glass-panel">
           <div className="box-top-ribbon">
             <div className="label-badge">
               <span className="dot-ping"></span>
@@ -332,7 +316,7 @@ END:VCARD`;
             <button
               type="button"
               disabled={loading || isTyping}
-              onClick={() => generateAIReview(selectedChipObj, language)}
+              onClick={() => generateAIReview(selectedChips, language)}
               className="top-rewrite-btn"
             >
               <span>Rewrite</span>
@@ -370,8 +354,8 @@ END:VCARD`;
           <p className="card-disclaimer-note">Please review the wording before posting.</p>
         </div>
 
-        {/* Quick Actions */}
-        <div className="quick-actions-card">
+        {/* Quick Actions (Glassmorphism) */}
+        <div className="quick-actions-card glass-panel">
           <div className="soft-action-grid">
             <div className="action-row-upper">
               {/* WhatsApp */}
@@ -407,39 +391,23 @@ END:VCARD`;
               </a>
             </div>
 
-            {hasSocials && (
-            <div className="action-row-lower">
-              {/* Instagram */}
+            <div className="action-row-lower" style={HAS_SOCIAL ? undefined : { display: "none" }}>
               {CLIENT_CONFIG.instagramUrl && (
                 <a href={CLIENT_CONFIG.instagramUrl} target="_blank" rel="noreferrer" className="soft-circle-action">
-                <div className="icon-disc insta-disc">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                </div>
-                <span className="icon-tag">Instagram</span>
-              </a>
+                  <div className="icon-disc insta-disc">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                  </div>
+                  <span className="icon-tag">Instagram</span>
+                </a>
               )}
-
-              {/* WhatsApp Channel */}
-              {CLIENT_CONFIG.whatsappChannelUrl && (
-                <a href={CLIENT_CONFIG.whatsappChannelUrl} target="_blank" rel="noreferrer" className="soft-circle-action">
-                <div className="icon-disc wa-channel-disc">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                </div>
-                <span className="icon-tag">WA Channel</span>
-              </a>
-              )}
-
-              {/* Facebook */}
               {CLIENT_CONFIG.facebookUrl && (
                 <a href={CLIENT_CONFIG.facebookUrl} target="_blank" rel="noreferrer" className="soft-circle-action">
-                <div className="icon-disc fb-disc">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                </div>
-                <span className="icon-tag">Facebook</span>
-              </a>
+                  <div className="icon-disc fb-disc">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                  </div>
+                  <span className="icon-tag">Facebook</span>
+                </a>
               )}
-
-              {/* Menu */}
               {CLIENT_CONFIG.menuUrl && (
                 <a href={CLIENT_CONFIG.menuUrl} target="_blank" rel="noreferrer" className="soft-circle-action">
                   <div className="icon-disc menu-disc">
@@ -448,29 +416,18 @@ END:VCARD`;
                   <span className="icon-tag">Menu</span>
                 </a>
               )}
-
-              {/* YouTube */}
-              {CLIENT_CONFIG.youtubeUrl && (
-                <a href={CLIENT_CONFIG.youtubeUrl} target="_blank" rel="noreferrer" className="soft-circle-action">
-                <div className="icon-disc yt-disc">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor"/></svg>
-                </div>
-                <span className="icon-tag">YouTube</span>
-              </a>
-              )}
             </div>
-            )}
           </div>
         </div>
 
-        {/* Map Card */}
-        <div className="embedded-map-card">
+        {/* Map Card (Glassmorphism) */}
+        <div className="embedded-map-card glass-panel">
           <a href={CLIENT_CONFIG.mapsDirectionUrl} target="_blank" rel="noreferrer" className="map-card-header-link">
             <div className="address-highlight-box">
               <p className="agency-clean-address"><strong>📍 Address:</strong> {CLIENT_CONFIG.fullAddress}</p>
             </div>
             <div className="map-card-header">
-              <span>Find Us • Daryaganj, Delhi</span>
+              <span>Visit Us • {CLIENT_CONFIG.areaLabel}</span>
             </div>
           </a>
           <div className="map-iframe-container">
@@ -495,21 +452,9 @@ END:VCARD`;
           </a>
         </div>
 
-        {/* What we offer */}
-        {CLIENT_CONFIG.offers?.length > 0 && (
-          <div className="offers-card">
-            <h2 className="offers-title">What we offer</h2>
-            <ul className="offers-list">
-              {CLIENT_CONFIG.offers.map((o) => (
-                <li key={o}>{o}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {/* Mini Footer */}
         <footer className="mini-footer">
-          <span className="mini-footer-pill">
+          <span className="mini-footer-pill glass-panel">
             Powered by <strong>{CLIENT_CONFIG.agencyName}</strong>
             <span className="mini-footer-dot">•</span>
             Get QR:
@@ -518,35 +463,63 @@ END:VCARD`;
             </a>
           </span>
         </footer>
-
-        <p className="page-disclaimer">
-          These are only suggested reviews. You are free to write your own review or edit this one before posting.
-        </p>
       </div>
 
       <style jsx global>{`
-        .soft-luxury-viewport {
-          --primary: #b3121f;
-          --primary-dark: #7a0b14;
-          --primary-mid: #d02030;
-          --gold: #f7c948;
-          --gold-deep: #c98a1b;
-          --line: #f1cfcf;
-          --soft: #fff6f4;
-          --muted: #9a7a78;
-          --lang-active: #d4830f;
-          --ink: #2a1410;
+        /* Force override any global layout settings */
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: #fef2f2 !important; /* Soft fallback background */
+          min-height: 100% !important;
+        }
+
+        .veg-glass-viewport {
+          position: relative; /* Fixed layer interaction */
+          --tx-main: #2a1410;     
+          --tx-sub: #5c433c;      
+          --brand-primary: #b3121f; 
+          --brand-gold: #f7c948;
+          --glass-bg: rgba(255, 253, 250, 0.85); 
+          --glass-border: rgba(255, 255, 255, 0.6);
+          --glass-shadow: rgba(60, 0, 0, 0.08);
+
           min-height: 100vh;
-          background: linear-gradient(180deg, #e0303f 0%, #c01a2a 50%, #9c1220 100%);
-          padding: 20px 16px 20px;
+          background-color: transparent; 
+          padding: 10px 16px 24px;
           box-sizing: border-box;
-          font-family: "Jost", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          color: #2a1410;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          color: var(--tx-main);
           display: flex;
           flex-direction: column;
           align-items: center;
         }
+
+        /* 
+         * FIX: Bulletproof Fixed Background for Mobile 
+         * Using the /bg.png provided by user
+         */
+        .fixed-bg {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-image: url('/bg.png'); 
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          z-index: 0; 
+          pointer-events: none; /* Let clicks pass through */
+        }
+
+        /* 
+         * FIX: Main content flow 
+         * z-index: 1 ensures it sits ABOVE the fixed image layer
+         */
         .main-content-flow {
+          position: relative;
+          z-index: 1;
           width: 100%;
           max-width: 410px;
           display: flex;
@@ -554,163 +527,181 @@ END:VCARD`;
           align-items: center;
           text-align: center;
         }
+
+        /* Glassmorphism Utility Class */
+        .glass-panel {
+          background: var(--glass-bg);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid var(--glass-border);
+          box-shadow: 0 8px 32px var(--glass-shadow);
+        }
+
         .brand-medallion-badge {
-          margin-top: 6px;
-          margin-bottom: 2px;
+          margin-top: 12px;
+          margin-bottom: 6px;
           display: flex;
           flex-direction: column;
           align-items: center;
         }
+
         .logo-circle-container {
-          width: clamp(96px, 13vh, 120px);
-          height: clamp(96px, 13vh, 120px);
+          width: 110px;
+          height: 110px;
           border-radius: 50%;
-          background-color: transparent;
+          background-color: #ffffff;
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
-          box-shadow: 0 14px 34px rgba(60, 0, 0, 0.4), 0 6px 14px rgba(0,0,0,0.18);
-          margin-bottom: 8px;
+          box-shadow: 0 10px 25px rgba(179, 18, 31, 0.2);
+          margin-bottom: 12px;
           animation: floatLogo 3.5s ease-in-out infinite;
-          border: 3px solid #f7c948;
-          transition: transform 0.2s ease;
+          border: 3px solid var(--brand-gold);
         }
-        .logo-circle-container:active {
-          transform: scale(0.96);
-        }
+
         @keyframes floatLogo {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-6px); }
         }
-        @media (prefers-reduced-motion: reduce) {
-          .logo-circle-container { animation: none; }
-        }
+
         .brand-main-title {
           font-family: Georgia, serif;
-          font-size: 21px;
+          font-size: 26px;
           font-weight: 800;
           color: #ffffff;
-          margin: 0 0 2px;
+          margin: 0 0 4px;
           letter-spacing: 0.3px;
-          text-shadow: 0 2px 10px rgba(60,0,0,0.3);
+          text-shadow: 0 2px 8px rgba(0,0,0,0.6);
         }
+
         .brand-serif-subtitle {
           font-family: Georgia, serif;
           font-style: italic;
-          font-size: 12.5px;
+          font-size: 13.5px;
           color: #ffe3a3;
-          margin: 0 0 4px;
+          margin: 0 0 10px;
+          text-shadow: 0 1px 4px rgba(0,0,0,0.6);
         }
-        .royal-shahi-divider {
+
+        .royal-divider {
           display: flex;
           align-items: center;
           justify-content: center;
           width: 85%;
-          margin: 4px auto 6px;
+          margin: 4px auto 12px;
           gap: 10px;
         }
+
         .divider-line {
           flex: 1;
           height: 1px;
-          background: linear-gradient(90deg, transparent, #f7c948, transparent);
+          background: linear-gradient(90deg, transparent, var(--brand-gold), transparent);
+          opacity: 0.8;
         }
-        .divider-gem {
-          color: #f7c948;
+
+        .divider-diamond {
+          color: var(--brand-gold);
           font-size: 8px;
         }
+
         .stars-cluster {
           display: flex;
           gap: 4px;
-          color: #ffd24d;
-          font-size: 15px;
-          margin-bottom: 2px;
+          color: #f7c948;
+          font-size: 16px;
+          margin-bottom: 4px;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
         }
+
         .experience-tracker-title {
-          font-size: 9px;
+          font-size: 9.5px;
           font-weight: 800;
           letter-spacing: 2px;
-          color: #ffe6e6;
+          color: #ffffff;
           text-transform: uppercase;
-          margin: 0 0 8px;
+          margin: 0 0 12px;
+          text-shadow: 0 1px 4px rgba(0,0,0,0.6);
         }
+
         .floating-pills-cloud {
           display: flex;
           flex-wrap: wrap;
           justify-content: center;
-          gap: 5px;
-          margin-bottom: 8px;
+          gap: 6px;
+          margin-bottom: 14px;
           width: 100%;
         }
+
         .embossed-pill {
           border-radius: 999px;
-          padding: 5px 11px;
-          font-family: inherit;
-          font-size: 10px;
-          font-weight: 400;
-          letter-spacing: 0.8px;
-          text-transform: uppercase;
-          line-height: 1.2;
-          background: var(--soft);
-          color: #a3121f;
-          border: 1px solid #ffffff;
+          padding: 6px 14px;
+          font-size: 11px;
+          background: var(--glass-bg);
+          backdrop-filter: blur(8px);
+          color: var(--tx-sub);
+          border: 1px solid var(--glass-border);
           cursor: pointer;
-          box-shadow: 0 2px 6px rgba(60, 0, 0, 0.18);
-          transition: all 0.16s ease;
+          box-shadow: 0 2px 8px var(--glass-shadow);
+          transition: all 0.2s ease;
         }
-        .embossed-pill:active {
-          transform: scale(0.95);
-        }
+
+        .embossed-pill:active { transform: scale(0.95); }
+
         .embossed-pill.active {
-          background: var(--primary-dark);
+          background: var(--brand-primary);
           color: #ffffff;
-          border-color: var(--primary-dark);
-          box-shadow: 0 4px 14px rgba(106, 18, 32, 0.3);
+          font-weight: 700;
+          border-color: var(--brand-primary);
+          box-shadow: 0 4px 14px rgba(179, 18, 31, 0.4);
         }
+
         .capsule-lang-dock {
           display: inline-flex;
-          background: #ffffff;
+          background: var(--glass-bg);
+          backdrop-filter: blur(8px);
           border-radius: 999px;
           padding: 3px;
           gap: 2px;
-          margin-bottom: 10px;
-          box-shadow: 0 3px 10px rgba(180, 155, 130, 0.12);
-          border: 1px solid var(--line);
+          margin-bottom: 16px;
+          box-shadow: 0 3px 10px var(--glass-shadow);
+          border: 1px solid var(--glass-border);
         }
+
         .capsule-lang-btn {
-          padding: 6px 20px;
-          letter-spacing: 1px;
-          font-family: inherit;
+          padding: 5px 18px;
           border-radius: 999px;
           border: none;
           background: transparent;
           font-size: 10px;
           font-weight: 700;
-          color: #7b6b5d;
+          color: var(--tx-sub);
           cursor: pointer;
+          transition: all 0.2s ease;
         }
+
         .capsule-lang-btn.active {
-          background: var(--lang-active);
+          background: #d4830f;
           color: #ffffff;
-          box-shadow: 0 3px 8px rgba(120, 70, 0, 0.35);
+          box-shadow: 0 3px 8px rgba(212, 131, 15, 0.4);
         }
+
         .signature-review-box {
           width: 100%;
-          background: #fffdfb;
           border-radius: 24px;
           padding: 18px;
           box-sizing: border-box;
-          box-shadow: 0 14px 34px rgba(60, 0, 0, 0.28);
           margin-bottom: 16px;
           text-align: left;
-          border-top: 4px solid var(--gold);
-          color: #2b2016;
+          border-top: 4px solid var(--brand-gold);
         }
+
         .box-top-ribbon {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: 10px;
         }
+
         .label-badge {
           display: inline-flex;
           align-items: center;
@@ -718,121 +709,121 @@ END:VCARD`;
           font-size: 8.5px;
           font-weight: 800;
           letter-spacing: 1.8px;
-          color: var(--muted);
+          color: var(--tx-sub);
           text-transform: uppercase;
         }
+
         .dot-ping {
-          width: 5px;
-          height: 5px;
+          width: 6px;
+          height: 6px;
           border-radius: 50%;
-          background: var(--primary);
+          background: var(--brand-primary);
         }
+
         .top-rewrite-btn {
           display: inline-flex;
           align-items: center;
           padding: 4px 10px;
           border-radius: 999px;
-          background: var(--soft);
-          border: 1px solid var(--line);
-          color: var(--primary);
+          background: #ffffff;
+          border: 1px solid #f1cfcf;
+          color: var(--brand-primary);
           font-size: 10.5px;
           font-weight: 650;
           cursor: pointer;
-          transition: transform 0.15s ease;
         }
-        .top-rewrite-btn:active {
-          transform: scale(0.95);
-        }
+
         .review-display-zone {
-          min-height: 80px;
+          min-height: 120px;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 4px 2px 8px;
         }
+
         .loader-shimmer-wrap {
-          color: var(--gold-deep);
+          color: var(--brand-primary);
           font-size: 12px;
           font-style: italic;
         }
+
         .review-body-text {
-          font-family: "Cormorant Garamond", Georgia, serif;
-          font-style: italic;
-          font-size: 17px;
+          font-family: Georgia, serif;
+          font-size: 14.5px;
           line-height: 1.6;
-          color: #2b2016;
+          color: var(--tx-main);
           margin: 0;
           width: 100%;
           white-space: pre-wrap;
         }
+
         .review-placeholder {
           font-family: Georgia, serif;
           font-size: 13px;
           font-style: italic;
-          color: #a49688;
+          color: #8c736e;
           margin: 0;
         }
+
         .review-error {
           font-size: 12px;
-          color: #a3212d;
+          color: #ef4444;
           margin: 0;
         }
+
         .typewriter-cursor {
           display: inline-block;
           width: 2px;
           height: 13px;
-          background: var(--primary);
+          background: var(--brand-primary);
           margin-left: 3px;
           vertical-align: middle;
           animation: blink 0.7s infinite;
         }
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
         .card-ornament-center {
           text-align: center;
-          color: var(--gold);
-          font-size: 7px;
-          margin: 4px 0 8px;
+          color: var(--brand-gold);
+          font-size: 9px;
+          margin: 6px 0 10px;
+          opacity: 0.8;
         }
+
         .full-luxury-copy-btn {
           width: 100%;
           height: 50px;
           border-radius: 999px;
-          background: linear-gradient(180deg, var(--primary-mid) 0%, var(--primary) 100%);
+          background: linear-gradient(90deg, #c01a2a 0%, #9c1220 100%);
           border: none;
           color: #ffffff;
-          font-size: 12px;
-          font-weight: 700;
-          letter-spacing: 1.4px;
-          text-transform: uppercase;
-          font-family: inherit;
+          font-size: 12.5px;
+          font-weight: 800;
           cursor: pointer;
-          box-shadow: 0 8px 22px rgba(106, 18, 32, 0.35);
+          box-shadow: 0 8px 22px rgba(179, 18, 31, 0.4);
           transition: transform 0.15s ease;
         }
-        .full-luxury-copy-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .full-luxury-copy-btn:active:not(:disabled) {
-          transform: scale(0.98);
-        }
+
+        .full-luxury-copy-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .full-luxury-copy-btn:active:not(:disabled) { transform: scale(0.98); }
+
         .card-disclaimer-note {
           font-size: 9.5px;
-          color: var(--muted);
+          color: var(--tx-sub);
           text-align: center;
           margin: 8px 0 0;
           font-style: italic;
         }
+
         .quick-actions-card {
           width: 100%;
-          background: transparent;
-          padding: 4px 0 6px;
+          border-radius: 22px;
+          padding: 18px 12px;
           box-sizing: border-box;
-          margin-bottom: 10px;
+          margin-bottom: 16px;
         }
+
         .soft-action-grid {
           display: flex;
           flex-direction: column;
@@ -840,97 +831,75 @@ END:VCARD`;
           gap: 16px;
           width: 100%;
         }
-        .action-row-upper {
+
+        .action-row-upper, .action-row-lower {
           display: flex;
           justify-content: center;
           gap: 14px;
           width: 100%;
         }
-        .action-row-lower {
-          display: flex;
-          justify-content: center;
-          gap: 14px;
-          width: 100%;
-        }
+
         .soft-circle-action {
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 5px;
           text-decoration: none !important;
-          font-family: inherit;
-          color: #4a3c30;
+          color: var(--tx-sub);
           background: transparent;
           border: none;
           cursor: pointer;
-          padding: 0;
           transition: transform 0.15s ease;
         }
-        .soft-circle-action:active {
-          transform: scale(0.92);
-        }
+
+        .soft-circle-action:active { transform: scale(0.92); }
+
         .icon-disc {
-          width: 54px;
-          height: 54px;
+          width: 50px;
+          height: 50px;
           border-radius: 50%;
           background: #ffffff;
           display: grid;
           place-items: center;
-          box-shadow: 0 8px 18px rgba(60, 0, 0, 0.3);
-          border: 2px solid #f7c948;
+          box-shadow: 0 4px 12px var(--glass-shadow);
+          border: 1px solid #f1cfcf;
           transition: all 0.2s ease;
         }
+
         .icon-disc svg {
           width: 20px;
           height: 20px;
-          stroke: #b3121f;
+          stroke: var(--brand-primary);
           transition: stroke 0.2s ease;
         }
+
         .whatsapp-disc:hover { background: #25d366; border-color: #25d366; }
         .whatsapp-disc:hover svg { stroke: #ffffff; }
-
         .call-disc:hover { background: #007aff; border-color: #007aff; }
         .call-disc:hover svg { stroke: #ffffff; }
-
-        .contact-disc:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+        .contact-disc:hover { background: var(--brand-primary); border-color: var(--brand-primary); }
         .contact-disc:hover svg { stroke: #ffffff; }
-
         .map-disc:hover { background: #ea4335; border-color: #ea4335; }
         .map-disc:hover svg { stroke: #ffffff; }
-
-        .insta-disc:hover { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); border-color: transparent; }
-        .insta-disc:hover svg { stroke: #ffffff; }
-
-        .wa-channel-disc:hover { background: #25d366; border-color: #25d366; }
-        .wa-channel-disc:hover svg { stroke: #ffffff; }
-
-        .fb-disc:hover { background: #1877f2; border-color: #1877f2; }
-        .fb-disc:hover svg { stroke: #ffffff; }
-
-        .google-disc:hover { background: #4285f4; border-color: #4285f4; }
-        .google-disc:hover svg { stroke: #ffffff; }
-        .menu-disc:hover { background: var(--primary); border-color: var(--primary); }
+        .menu-disc:hover { background: var(--brand-primary); border-color: var(--brand-primary); }
         .menu-disc:hover svg { stroke: #ffffff; }
 
-        .yt-disc:hover { background: #ff0000; border-color: #ff0000; }
-        .yt-disc:hover svg { stroke: #ffffff; color: #ffffff; }
-
         .icon-tag {
-          font-size: 10.5px;
-          font-weight: 600;
-          color: #ffffff;
+          font-size: 9.5px;
+          font-weight: 700;
+          color: var(--tx-main);
         }
+
         .embedded-map-card {
           width: 100%;
-          background: transparent;
-          padding: 0;
+          border-radius: 22px;
+          padding: 14px 16px;
           box-sizing: border-box;
-          margin-bottom: 10px;
+          margin-bottom: 12px;
           text-align: left;
         }
-        .map-card-header-link {
-          text-decoration: none;
-        }
+
+        .map-card-header-link { text-decoration: none; }
         .map-card-header {
           display: flex;
           align-items: center;
@@ -938,112 +907,68 @@ END:VCARD`;
           gap: 6px;
           font-size: 11.5px;
           font-weight: 800;
-          color: #ffe3a3;
+          color: var(--brand-primary);
           margin-bottom: 8px;
         }
+
         .map-iframe-container {
           width: 100%;
-          border-radius: 18px;
+          border-radius: 14px;
           overflow: hidden;
-          border: 1px solid var(--line);
-          box-shadow: 0 8px 22px rgba(60, 0, 0, 0.35);
+          border: 1px solid var(--glass-border);
           margin-bottom: 8px;
         }
+
         .map-directions-link {
           font-size: 11px;
           font-weight: 750;
-          color: #ffe3a3;
+          color: var(--brand-primary);
           text-decoration: none;
           display: block;
           text-align: center;
           margin-bottom: 8px;
         }
+
         .address-highlight-box {
-          background: transparent;
-          padding: 0 4px;
-          margin-bottom: 10px;
+          background: rgba(255,255,255,0.5);
+          border-radius: 12px;
+          padding: 10px 12px;
+          border: 1px solid var(--glass-border);
+          margin-bottom: 8px;
         }
+
         .agency-clean-address {
-          font-size: 12px;
-          color: #ffffff;
+          font-size: 10.5px;
+          color: var(--tx-main);
           margin: 0;
           line-height: 1.4;
           text-align: center;
         }
 
-        /* ---------- What we offer ---------- */
-        .offers-card {
-          width: 100%;
-          background: #fffdfb;
-          border-radius: 22px;
-          padding: 16px 18px 8px;
-          box-sizing: border-box;
-          border: 1px solid var(--line);
-          box-shadow: 0 8px 24px rgba(60, 0, 0, 0.2);
-          margin-bottom: 14px;
-        }
-        .offers-title {
-          font-family: Georgia, serif;
-          font-size: 20px;
-          font-weight: 600;
-          color: var(--primary);
-          margin: 0 0 8px;
-        }
-        .offers-list {
-          list-style: none;
-          margin: 0;
-          padding: 0;
-        }
-        .offers-list li {
-          font-size: 12.5px;
-          color: #4a3c30;
-          padding: 10px 0;
-          border-top: 1px solid var(--line);
-        }
-        .offers-list li:first-child { border-top: none; }
-
-        .page-disclaimer {
-          font-size: 9.5px;
-          color: rgba(255, 255, 255, 0.8);
-          text-align: center;
-          line-height: 1.5;
-          margin: 10px 8px 0;
-        }
-
-        /* ---------- Mini Footer ---------- */
         .mini-footer {
           width: 100%;
           display: flex;
           justify-content: center;
           margin-top: 2px;
         }
+
         .mini-footer-pill {
           display: inline-flex;
           align-items: center;
           justify-content: center;
           flex-wrap: wrap;
           gap: 4px;
-          padding: 5px 12px;
-          border: 1px solid var(--line);
+          padding: 6px 14px;
           border-radius: 999px;
-          background: #ffffff;
           font-size: 8.5px;
           letter-spacing: 0.3px;
-          color: var(--muted);
+          color: var(--tx-sub);
           line-height: 1.4;
         }
-        .mini-footer-pill strong {
-          color: var(--primary);
-          font-weight: 700;
-        }
-        .mini-footer-dot {
-          color: var(--gold);
-        }
-        .mini-footer-pill a {
-          color: var(--primary);
-          font-weight: 700;
-          text-decoration: none;
-        }
+
+        .mini-footer-pill strong { color: var(--tx-main); font-weight: 700; }
+        .mini-footer-dot { color: var(--brand-gold); }
+        .mini-footer-pill a { color: var(--brand-primary); font-weight: 700; text-decoration: none; }
       `}</style>
     </main>
   );
