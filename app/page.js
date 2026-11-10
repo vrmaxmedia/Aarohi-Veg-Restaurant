@@ -470,12 +470,13 @@ END:VCARD`;
         html, body {
           margin: 0 !important;
           padding: 0 !important;
-          background-color: #fef2f2 !important; /* Soft fallback background */
-          min-height: 100% !important;
+          background-color: #fef2f2 !important; 
+          height: 100%;
+          overscroll-behavior-y: none; /* Stops the bouncy pull-to-refresh on mobile */
         }
 
         .veg-glass-viewport {
-          position: relative; /* Fixed layer interaction */
+          position: relative; 
           --tx-main: #2a1410;     
           --tx-sub: #5c433c;      
           --brand-primary: #b3121f; 
@@ -496,27 +497,23 @@ END:VCARD`;
         }
 
         /* 
-         * FIX: Bulletproof Fixed Background for Mobile 
-         * Using the /bg.png provided by user
+         * FIX 1: background-position: center bottom; -> Ensures food bowl at the bottom is always visible
+         * FIX 2: Extended top/bottom/left/right -> Prevents jumping when mobile URL bar hides
          */
         .fixed-bg {
           position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
+          top: -20px;
+          bottom: -20px;
+          left: -20px;
+          right: -20px;
           background-image: url('/bg.png'); 
           background-size: cover;
-          background-position: center;
+          background-position: center bottom; 
           background-repeat: no-repeat;
           z-index: 0; 
-          pointer-events: none; /* Let clicks pass through */
+          pointer-events: none; 
         }
 
-        /* 
-         * FIX: Main content flow 
-         * z-index: 1 ensures it sits ABOVE the fixed image layer
-         */
         .main-content-flow {
           position: relative;
           z-index: 1;
