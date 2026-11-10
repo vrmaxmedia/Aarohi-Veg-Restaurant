@@ -242,8 +242,14 @@ END:VCARD`;
 
   return (
     <main className="veg-glass-viewport">
-      {/* BULLETPROOF FIXED BACKGROUND USING YOUR NEW IMAGE */}
-      <div className="fixed-bg"></div>
+      {/* BULLETPROOF MOBILE BACKGROUND FIX */}
+      <div className="fixed-bg-container">
+        <img 
+          src="/1000317201.png" 
+          alt="background" 
+          className="bg-image-pin"
+        />
+      </div>
 
       <div className="main-content-flow">
         
@@ -467,12 +473,12 @@ END:VCARD`;
       </div>
 
       <style jsx global>{`
-        /* Force override any global layout settings to prevent jumping */
+        /* Reset mobile behavior */
         html, body {
           margin: 0 !important;
           padding: 0 !important;
           background-color: #fef2f2 !important; 
-          height: 100%;
+          min-height: 100%;
           overscroll-behavior-y: none; 
         }
 
@@ -498,22 +504,25 @@ END:VCARD`;
         }
 
         /* 
-         * FIX 1: URL is now the NEW PERFECT IMAGE
-         * FIX 2: Extended margins (-20px) prevents jump when mobile URL bar hides
-         * FIX 3: background-position: center bottom ensures food bowl is anchored
+         * BULLETPROOF MOBILE BACKGROUND FIX 
+         * By setting inset: 0 on a fixed container, it ignores URL bar resizes.
          */
-        .fixed-bg {
+        .fixed-bg-container {
           position: fixed;
-          top: -20px;
-          bottom: -20px;
-          left: -20px;
-          right: -20px;
-          background-image: url('/1000317201.png'); /* YOUR NEW PERFECT IMAGE */
-          background-size: cover;
-          background-position: center bottom; 
-          background-repeat: no-repeat;
-          z-index: 0; 
-          pointer-events: none; 
+          top: 0;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 0;
+          pointer-events: none;
+          overflow: hidden;
+        }
+
+        .bg-image-pin {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center bottom; /* Anchor to the bottom bowl */
         }
 
         .main-content-flow {
@@ -567,19 +576,18 @@ END:VCARD`;
           font-family: Georgia, serif;
           font-size: 26px;
           font-weight: 800;
-          color: #ffffff;
+          color: #2a1410;
           margin: 0 0 4px;
           letter-spacing: 0.3px;
-          text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+          text-shadow: 0 1px 2px rgba(255,255,255,0.8);
         }
 
         .brand-serif-subtitle {
           font-family: Georgia, serif;
           font-style: italic;
           font-size: 13.5px;
-          color: #ffe3a3;
+          color: #5c433c;
           margin: 0 0 10px;
-          text-shadow: 0 1px 4px rgba(0,0,0,0.6);
         }
 
         .royal-divider {
@@ -594,40 +602,37 @@ END:VCARD`;
         .divider-line {
           flex: 1;
           height: 1px;
-          background: linear-gradient(90deg, transparent, var(--brand-gold), transparent);
-          opacity: 0.8;
+          background: linear-gradient(90deg, transparent, var(--brand-primary), transparent);
+          opacity: 0.3;
         }
 
         .divider-diamond {
-          color: var(--brand-gold);
+          color: var(--brand-primary);
           font-size: 8px;
         }
 
         .stars-cluster {
           display: flex;
           gap: 4px;
-          color: #f7c948;
+          color: #eab308;
           font-size: 16px;
           margin-bottom: 4px;
-          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
         }
 
         .experience-tracker-title {
           font-size: 9.5px;
           font-weight: 800;
           letter-spacing: 2px;
-          color: #ffffff;
+          color: #7f1d1d;
           text-transform: uppercase;
           margin: 0 0 6px;
-          text-shadow: 0 1px 4px rgba(0,0,0,0.6);
         }
         
         .chip-hint {
           font-size: 10px;
-          color: #ffffff;
+          color: #5c433c;
           margin: 0 0 12px;
           opacity: 0.9;
-          text-shadow: 0 1px 4px rgba(0,0,0,0.6);
         }
 
         .floating-pills-cloud {
